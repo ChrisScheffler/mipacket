@@ -49,3 +49,13 @@ MiPacket {
     }
 }
 ```
+
+## References
+
+- https://github.com/esphome/esphome
+- https://github.com/custom-components/ble_monitor
+- https://github.com/LynxyssCZ/node-xiaomi-gap-parser
+
+## Licence
+
+[MIT](LICENSE)
