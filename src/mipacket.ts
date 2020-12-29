@@ -61,29 +61,6 @@ const PRODUCT_NAMES = {
   0x07F6: 'MJYD02YLA',
 };
 
-class FrameControl {
-  readonly isEncrypted: boolean;
-  readonly hasMac: boolean;
-  readonly hasCapabilities: boolean;
-  readonly hasEvent: boolean;
-  readonly hasMesh: boolean;
-  readonly isRegistered: boolean;
-  readonly bindingState: boolean;
-  readonly authMode: number;
-  readonly version: number;
-  constructor(data: number) {
-    this.isEncrypted = getBit(data, 3);
-    this.hasMac = getBit(data, 4);
-    this.hasCapabilities = getBit(data, 5);
-    this.hasEvent = getBit(data, 6);
-    this.hasMesh = getBit(data, 7);
-    this.isRegistered = getBit(data, 8);
-    this.bindingState = getBit(data, 9);
-    this.authMode = getInt(data, 10, 11);
-    this.version = getInt(data, 12, 15);
-  }
-}
-
 class Capabilities {
   readonly isConnectable: boolean;
   readonly isCentralable: boolean;
@@ -133,7 +110,15 @@ class Event {
 }
 
 export default class MiPacket {
-  readonly frameControl: FrameControl;
+  readonly isEncrypted: boolean;
+  readonly hasMac: boolean;
+  readonly hasCapabilities: boolean;
+  readonly hasEvent: boolean;
+  readonly hasMesh: boolean;
+  readonly isRegistered: boolean;
+  readonly bindingState: boolean;
+  readonly authMode: number;
+  readonly version: number;
   readonly productId: number;
   readonly productName: string;
   readonly frameCounter: number;
@@ -146,43 +131,50 @@ export default class MiPacket {
   readonly keyBuffer1: Buffer;
   readonly keyBuffer2: Buffer;
 
-  constructor(buffer: Buffer) {
-    if (!buffer || buffer.length < 5) {
+  constructor(data: Buffer | string) {
+    if (!data || data.length < 5) {
       throw new Error('invalid packet length');
     }
-    this.frameControl = new FrameControl(buffer.readUInt16LE(0));
+    let buffer: Buffer;
+    if (typeof data === 'string') {
+      buffer = Buffer.from(data, 'hex');
+    } else {
+      buffer = data;
+    }
+    const frame = buffer.readUInt16LE(0);
+    this.isEncrypted = getBit(frame, 3);
+    this.hasMac = getBit(frame, 4);
+    this.hasCapabilities = getBit(frame, 5);
+    this.hasEvent = getBit(frame, 6);
+    this.hasMesh = getBit(frame, 7);
+    this.isRegistered = getBit(frame, 8);
+    this.bindingState = getBit(frame, 9);
+    this.authMode = getInt(frame, 10, 11);
+    this.version = getInt(frame, 12, 15);
     this.productId = buffer.readUInt16LE(2);
-    this.productName = PRODUCT_NAMES[this.productId]||'unknown';
+    this.productName = PRODUCT_NAMES[this.productId] || 'unknown';
     this.frameCounter = buffer.readUInt8(4);
     let pos = 5;
-    if (this.frameControl.hasMac) {
+    if (this.hasMac) {
       this.mac = getMac(buffer, pos);
       pos += 6;
     }
-    if (this.frameControl.hasCapabilities) {
+    if (this.hasCapabilities) {
       this.capabilities = new Capabilities(buffer.readUInt8(pos));
       pos += 1;
     }
-    if (
-      this.frameControl.hasCapabilities &&
-      this.capabilities.bindState === 3 &&
-      this.frameControl.version >= 3
-    ) {
+    if (this.hasCapabilities && this.capabilities.bindState === 3 && this.version >= 3) {
       this.comboKey = 'not implemented yet';
       pos += 2;
     }
-    if (
-      this.frameControl.hasCapabilities &&
-      this.capabilities.hasIoCapabilities
-    ) {
+    if (this.hasCapabilities && this.capabilities.hasIoCapabilities) {
       this.ioCapabilities = new IoCapabilities(buffer.readUInt8(pos));
       pos += 2;
     }
-
-    if (this.frameControl.hasEvent && pos < buffer.length) {
+    if (this.hasEvent && pos < buffer.length) {
       let eventLength = 0;
       let eventId = 0;
-      if (this.frameControl.version >= 5) {
+      if (this.version >= 5) {
         eventLength = buffer.readUInt8(pos);
         eventId = buffer.readUInt8(pos + 1);
         pos += 2;
@@ -191,19 +183,17 @@ export default class MiPacket {
         eventLength = buffer.readUInt8(pos + 2);
         pos += 3;
       }
-
       if (eventLength > 0) {
         const eventData = Buffer.alloc(eventLength);
         buffer.copy(eventData, 0, pos, pos + eventLength);
         this.event = new Event(eventId, eventData);
       }
     }
-
-    if (this.frameControl.isEncrypted) {
+    if (this.isEncrypted) {
       this.keyBuffer1 = Buffer.alloc(3);
       buffer.copy(this.keyBuffer1, 0, pos, pos + 3);
       pos += 3;
-      if (this.frameControl.version >= 4) {
+      if (this.version >= 4) {
         this.keyBuffer2 = Buffer.alloc(4);
         buffer.copy(this.keyBuffer2, 0, pos, pos + 4);
         pos += 4;
@@ -213,8 +203,7 @@ export default class MiPacket {
         pos += 1;
       }
     }
-
-    if (this.frameControl.hasMesh) {
+    if (this.hasMesh) {
       this.mesh = new Mesh(buffer.readUInt8(pos));
       pos += 2;
     }

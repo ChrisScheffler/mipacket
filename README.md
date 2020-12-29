@@ -18,35 +18,37 @@ npm install mipacket
 ## Usage
 
 ```javascript
+import MiPacket from 'mipacket';
+
 const packet = new MiPacket(buffer);
+// or
+const packet = new MiPacket('hexstring');
 ```
 
 ## Sample output
 
 ```javascript
 MiPacket {
-  frameControl: FrameControl {
-    isEncrypted: false,
-    hasMac: true,
-    hasCapabilities: false,
-    hasEvent: true,
-    hasMesh: false,
-    isRegistered: false,
-    bindingState: false,
-    authMode: 0,
-    version: 2
-  },
+  isEncrypted: false,
+  hasMac: true,
+  hasCapabilities: false,
+  hasEvent: true,
+  hasMesh: false,
+  isRegistered: false,
+  bindingState: false,
+  authMode: 0,
+  version: 2,
   productId: 426,
   productName: 'LYWSDCGQ',
   frameCounter: 72,
   mac: <Buffer 12 34 56 78 90 ab>,
   event: Event {
-      eventId: 13,
-      eventData: {
-          temperature: 19.4,
-          humidity: 66
-        }
+    eventId: 13,
+    eventData: {
+      temperature: 19.4,
+      humidity: 66
     }
+  }
 }
 ```
 

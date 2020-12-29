@@ -1,6 +1,6 @@
 {
   "name": "mipacket",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/mipacket.js",
   "types": "dist/mipacket.d.ts",

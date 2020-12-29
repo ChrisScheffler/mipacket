@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import MiPacket from '../src/mipacket';
 
 describe('packets', function() {
-  it('mac', function() {
+  it('from Buffer', function() {
     const buffer = Buffer.from([
       0x50, // 00
       0x20, // 01
@@ -26,5 +26,24 @@ describe('packets', function() {
     const packet = new MiPacket(buffer);
     console.log(packet);
     expect(packet.mac.toString('hex')).equal('1234567890ab');
+  });
+
+  it('from hexstring', function() {
+    const packet = new MiPacket('5020aa0148ab90785634120d1004c2009402');
+    console.log(packet);
+    expect(packet.mac.toString('hex')).equal('1234567890ab');
+  });
+
+
+  /*
+  * packet can have hasEvent = true but doesn't contain an actual event
+  */
+  it('hasEvent but does not', function() {
+    const buffer = Buffer.from('71205d0105ab90785634120d', 'hex');
+    const packet = new MiPacket(buffer);
+    console.log(packet);
+    expect(packet.mac.toString('hex')).equal('1234567890ab');
+    expect(packet.hasEvent).true;
+    expect(packet.event).undefined;
   });
 });
